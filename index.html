@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>دیکد Base64 به بارکُد</title>
-  <script src="https://cdnjs.cloudflare/JsBarcode/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
   <style>
     body {
       font-family: "Vazir", sans-serif;
@@ -29,12 +29,13 @@
       border: 1px solid #ccc;
       margin-top: 10px;
       white-space: pre-wrap;
+      direction: ltr;
+      text-align: left;
     }
     .hidden {
       display: none;
     }
   </style>
-  <!-- فونت فارسی (اختیاری) -->
   <link href="https://v1.fontapi.ir/css/Vazir" rel="stylesheet">
 </head>
 <body>
@@ -44,7 +45,7 @@
   <input type="text" id="base64Input" placeholder="متن Base64 را وارد کنید..." />
   <button onclick="decodeAndGenerate()">تبدیل به بارکُد</button>
 
-  <div id="decoded" class="hidden" contenteditable="true"></div>
+  <div id="decoded" class="hidden" contenteditable="false"></div>
   <button id="copyBtn" class="hidden" onclick="copyDecoded()">کپی خروجی</button>
 
   <div id="barcode" class="hidden">
@@ -52,35 +53,77 @@
   </div>
 
   <script>
+    function cleanBase64(input) {
+      // حذف فاصله، نقل قول، خط جدید و سایر کاراکترهای غیرمعتبر
+      return input.trim()
+        .replace(/"/g, '')
+        .replace(/'/g, '')
+        .replace(/`/g, '')
+        .replace(/\s/g, '');
+    }
+
+    function decodeBase64(base64) {
+      // 1. پاک‌سازی
+      let clean = cleanBase64(base64);
+      
+      // 2. بررسی فرمت (الگوی Base64)
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(clean)) {
+        throw new Error("فرمت Base64 نامعتبر است.");
+      }
+
+      // 3. دیکُد به binary string
+      let binary = atob(clean);
+
+      // 4. تبدیل به UTF-8 (در صورت نیاز)
+      try {
+        // روش پیشرفته برای UTF-8
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return new TextDecoder('utf-8').decode(bytes);
+      } catch (e) {
+        // fallback: اگر UTF-8 نشد، همان binary را نشان بده
+        return binary;
+      }
+    }
+
     function decodeAndGenerate() {
-      const input = document.getElementById("base64Input").value.trim();
+      const input = document.getElementById("base64Input").value;
       const decodedDiv = document.getElementById("decoded");
       const copyBtn = document.getElementById("copyBtn");
       const barcodeDiv = document.getElementById("barcode");
 
-      if (!input) {
+      if (!input.trim()) {
         alert("لطفاً یک متن Base64 وارد کنید.");
         return;
       }
 
       try {
-        // Decode Base64
-        const decoded = atob(input);
+        const decoded = decodeBase64(input);
         decodedDiv.textContent = decoded;
         decodedDiv.classList.remove("hidden");
         copyBtn.classList.remove("hidden");
 
-        // Generate Barcode
-        JsBarcode("#barcodeSvg", decoded, {
-          format: "CODE128",
-          displayValue: true,
-          fontSize: 16,
-          width: 2,
-          height: 80
-        });
-        barcodeDiv.classList.remove("hidden");
+        // بارکُد فقط با کاراکترهای CODE128 معتبر کار می‌کند (رقم، حروف انگلیسی بالا و کاراکترهای محدود)
+        // اگر متن فارسی/غیرلاتین داشت، بارکُد خطا می‌دهد
+        if (!/^[A-Za-z0-9\s\-._$\/+]*$/.test(decoded)) {
+          alert("⚠️ متن حاوی کاراکترهایی است که در بارکُد CODE128 پشتیبانی نمی‌شوند (مثل فارسی). بارکُد ساخته نمی‌شود، اما متن دیکُد شده نمایش داده شد.");
+          barcodeDiv.classList.add("hidden");
+        } else {
+          JsBarcode("#barcodeSvg", decoded, {
+            format: "CODE128",
+            displayValue: true,
+            fontSize: 16,
+            width: 2,
+            height: 80,
+            textAlign: "center"
+          });
+          barcodeDiv.classList.remove("hidden");
+        }
       } catch (e) {
-        alert("خطا در دیکُد Base64! مطمئن شوید ورودی معتبر است.");
+        console.error(e);
+        alert("❌ خطا در دیکُد Base64!\n\nپیام خطا: " + e.message + "\n\n✅ نکته: مطمئن شوید ورودی یک متن Base64 معتبر است (بدون فاصله یا نقل قول).");
         decodedDiv.classList.add("hidden");
         copyBtn.classList.add("hidden");
         barcodeDiv.classList.add("hidden");
@@ -89,11 +132,12 @@
 
     function copyDecoded() {
       const text = document.getElementById("decoded").textContent;
+      if (!text) return;
       navigator.clipboard.writeText(text).then(() => {
-        alert("متن کپی شد!");
+        alert("متن با موفقیت کپی شد!");
       }).catch(err => {
-        console.error('کپی ناموفق بود:', err);
-        alert("خطا در کپی!");
+        console.error('کپی ناموفق:', err);
+        alert("مرورگر شما اجازه کپی نمی‌دهد. متن را دستی انتخاب و کپی کنید.");
       });
     }
   </script>
