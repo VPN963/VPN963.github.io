@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fa" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>رمزگذار ایموجی پیشرفته</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --card-bg: #f9f9f9;
+      --text: #222222;
+      --btn: #4361ee;
+      --btn-hover: #3a56d4;
+      --success: #4caf50;
+      --error: #f44336;
+      --border: #ddd;
+      --shadow: rgba(0,0,0,0.08);
+    }
+
+    [data-theme="dark"] {
+      --bg: #121212;
+      --card-bg: #1e1e1e;
+      --text: #f0f0f0;
+      --border: #333;
+      --shadow: rgba(0,0,0,0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 700;
+      font-size: 28px;
+      color: var(--btn);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: var(--btn);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 130px;
+      padding: 14px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      margin: 10px 0;
+      resize: vertical;
+      direction: ltr;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 15px 0;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-encode {
+      background: var(--btn);
+      color: white;
+    }
+
+    .btn-decode {
+      background: #f72585;
+      color: white;
+    }
+
+    .btn-copy {
+      background: #4caf50;
+      color: white;
+      margin-top: 5px;
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .output-container {
+      position: relative;
+    }
+
+    .copy-feedback {
+      position: absolute;
+      top: -30px;
+      right: 0;
+      background: var(--success);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .copy-feedback.show {
+      opacity: 1;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+      button {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+
+  <div class="container">
+    <h1>رمزگذار ایموجی پیشرفته</h1>
+
+    <label for="input">متن یا ایموجی ورودی:</label>
+    <textarea id="input" placeholder="مثلاً: Hello123! یا 👋🤓🔢..."></textarea>
+
+    <div class="btn-group">
+      <button class="btn-encode" onclick="encodeToEmoji()">🔐 متن → ایموجی</button>
+      <button class="btn-decode" onclick="decodeFromEmoji()">🔓 ایموجی → متن</button>
+    </div>
+
+    <label for="output">خروجی:</label>
+    <div class="output-container">
+      <textarea id="output" readonly></textarea>
+      <div class="copy-feedback" id="copyFeedback">کپی شد!</div>
+      <button class="btn-copy" onclick="copyToClipboard()">📋 کپی خروجی</button>
+    </div>
+  </div>
+
+  <script>
+    // نگاشت کامل — ایموجی‌های مرکب به‌صورت دقیق تعریف شده‌اند
+    const emojiMap = {
+      // حروف کوچک
+      'a': '😀', 'b': '😂', 'c': '😍', 'd': '😎', 'e': '🤩', 'f': '😭',
+      'g': '😡', 'h': '🤯', 'i': '🥶', 'j': '😱', 'k': '🥳', 'l': '😴',
+      'm': '🥱', 'n': '🤠', 'o': '😤', 'p': '🤢', 'q': '😵', 'r': '🤡',
+      's': '💩', 't': '👻', 'u': '👽', 'v': '🤖', 'w': '👾', 'x': '🧠',
+      'y': '👀', 'z': '👍',
+      // حروف بزرگ
+      'A': '🌞', 'B': '🌙', 'C': '⭐', 'D': '🌟', 'E': '✨', 'F': '☄️',
+      'G': '🔥', 'H': '💧', 'I': '❄️', 'J': '⚡', 'K': '🌈', 'L': '☁️',
+      'M': '🌪️', 'N': '🌫️', 'O': '🌋', 'P': '🏔️', 'Q': '🌵', 'R': '🌳',
+      'S': '🌊', 'T': '🏖️', 'U': '🏝️', 'V': '🏞️', 'W': '🌠', 'X': '🌌',
+      'Y': '🌍', 'Z': '🌎',
+      // اعداد (ایموجی‌های کیپدها — هر کدام یک رشته کامل هستند!)
+      '0': '0️⃣',
+      '1': '1️⃣',
+      '2': '2️⃣',
+      '3': '3️⃣',
+      '4': '4️⃣',
+      '5': '5️⃣',
+      '6': '6️⃣',
+      '7': '7️⃣',
+      '8': '8️⃣',
+      '9': '9️⃣',
+      // نمادها
+      ' ': '🪐',
+      '.': '🪨',
+      ',': '🪵',
+      '!': '💥',
+      '?': '❓',
+      '-': '➖',
+      ':': '🫧',
+      '/': '🫷',
+      '@': '✉️',
+      '=': '🟰',
+      '&': '🪢',
+      '#': '🔢',
+      '%': '🧮',
+      '(': '🧾',
+      ')': '🔖',
+      '+': '➕'
+    };
+
+    // ساخت reverseMap دقیق
+    const reverseMap = {};
+    for (const [char, emoji] of Object.entries(emojiMap)) {
+      reverseMap[emoji] = char;
+    }
+
+    // مرتب‌سازی کلیدها بر اساس طول (نزولی) — برای اولویت‌دهی به ایموجی‌های بلندتر
+    const sortedEmojiKeys = Object.keys(reverseMap).sort((a, b) => b.length - a.length);
+
+    function encodeToEmoji() {
+      const input = document.getElementById('input').value;
+      let output = '';
+      for (let char of input) {
+        output += emojiMap[char] || char;
+      }
+      document.getElementById('output').value = output;
+    }
+
+    function decodeFromEmoji() {
+      const input = document.getElementById('input').value;
+      let output = '';
+      let i = 0;
+      while (i < input.length) {
+        let matched = false;
+        // بررسی از بلندترین ایموجی به کوتاه‌ترین
+        for (const emoji of sortedEmojiKeys) {
+          if (input.startsWith(emoji, i)) {
+            output += reverseMap[emoji];
+            i += emoji.length;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          output += input[i];
+          i++;
+        }
+      }
+      document.getElementById('output').value = output;
+    }
+
+    async function copyToClipboard() {
+      const output = document.getElementById('output');
+      if (!output.value) {
+        showCopyFeedback('خروجی خالی است!', false);
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(output.value);
+        showCopyFeedback('کپی شد!', true);
+      } catch (err) {
+        showCopyFeedback('خطا در کپی!', false);
+      }
+    }
+
+    function showCopyFeedback(text, isSuccess = true) {
+      const feedback = document.getElementById('copyFeedback');
+      feedback.textContent = text;
+      feedback.style.background = isSuccess ? '#4caf50' : '#f44336';
+      feedback.classList.add('show');
+      setTimeout(() => feedback.classList.remove('show'), 2000);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      if (current === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }
+  </script>
+</body>
+</html>
