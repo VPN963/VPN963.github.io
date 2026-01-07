@@ -1,7 +1,74 @@
-<!-- index.html -->
-<h1>ابزارهای من</h1>
-<ul>
-  <li><a href="base64-decoder.html">دیکُد Base64 + بارکُد</a></li>
-  <li><a href="qr-generator.html">تولید QR کد</a></li>
-  <li><a href="text-encoder.html">انکُد متن به Base64</a></li>
-</ul>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ابزارهای من</title>
+  <style>
+    body {
+      font-family: "Vazir", sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 15px 0;
+    }
+    a {
+      display: block;
+      padding: 14px 20px;
+      background: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background 0.3s;
+      text-align: center;
+      font-weight: bold;
+    }
+    a:hover {
+      background: #2980b9;
+    }
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 0.9em;
+      color: #7f8c8d;
+    }
+  </style>
+  <!-- فونت فارسی Vazir -->
+  <link href="https://v1.fontapi.ir/css/Vazir" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h1>🛠️ ابزارهای من</h1>
+    <ul>
+      <li><a href="base64-decoder.html">دیکُد Base64 + تبدیل به بارکُد</a></li>
+      <li><a href="qr-generator.html">تولید QR Code</a></li>
+      <li><a href="text-encoder.html">انکُد متن به Base64</a></li>
+    </ul>
+
+    <footer>
+      <p>تمام ابزارها به صورت آفلاین و کلاینت‌ساید کار می‌کنند.</p>
+      <p>دیتا به سرور ارسال نمی‌شود. ✅</p>
+    </footer>
+  </div>
+</body>
+</html>
