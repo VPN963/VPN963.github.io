@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>دیکد Base64 به بارکُد</title>
+  <script src="https://cdnjs.cloudflare/JsBarcode/JsBarcode.all.min.js"></script>
+  <style>
+    body {
+      font-family: "Vazir", sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+      background: #f9f9f9;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #barcode {
+      text-align: center;
+      margin-top: 20px;
+    }
+    #decoded {
+      background: white;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+      white-space: pre-wrap;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+  <!-- فونت فارسی (اختیاری) -->
+  <link href="https://v1.fontapi.ir/css/Vazir" rel="stylesheet">
+</head>
+<body>
+
+  <h2>دیکُد Base64 و تبدیل به بارکُد</h2>
+
+  <input type="text" id="base64Input" placeholder="متن Base64 را وارد کنید..." />
+  <button onclick="decodeAndGenerate()">تبدیل به بارکُد</button>
+
+  <div id="decoded" class="hidden" contenteditable="true"></div>
+  <button id="copyBtn" class="hidden" onclick="copyDecoded()">کپی خروجی</button>
+
+  <div id="barcode" class="hidden">
+    <svg id="barcodeSvg"></svg>
+  </div>
+
+  <script>
+    function decodeAndGenerate() {
+      const input = document.getElementById("base64Input").value.trim();
+      const decodedDiv = document.getElementById("decoded");
+      const copyBtn = document.getElementById("copyBtn");
+      const barcodeDiv = document.getElementById("barcode");
+
+      if (!input) {
+        alert("لطفاً یک متن Base64 وارد کنید.");
+        return;
+      }
+
+      try {
+        // Decode Base64
+        const decoded = atob(input);
+        decodedDiv.textContent = decoded;
+        decodedDiv.classList.remove("hidden");
+        copyBtn.classList.remove("hidden");
+
+        // Generate Barcode
+        JsBarcode("#barcodeSvg", decoded, {
+          format: "CODE128",
+          displayValue: true,
+          fontSize: 16,
+          width: 2,
+          height: 80
+        });
+        barcodeDiv.classList.remove("hidden");
+      } catch (e) {
+        alert("خطا در دیکُد Base64! مطمئن شوید ورودی معتبر است.");
+        decodedDiv.classList.add("hidden");
+        copyBtn.classList.add("hidden");
+        barcodeDiv.classList.add("hidden");
+      }
+    }
+
+    function copyDecoded() {
+      const text = document.getElementById("decoded").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("متن کپی شد!");
+      }).catch(err => {
+        console.error('کپی ناموفق بود:', err);
+        alert("خطا در کپی!");
+      });
+    }
+  </script>
+
+</body>
+</html>
