@@ -3,100 +3,131 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>دیکد Base64 به بارکُد</title>
-  <script src="https://cdnjs.cloudflare/JsBarcode/JsBarcode.all.min.js"></script>
+  <title>Base64 به QR Code</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     body {
-      font-family: "Vazir", sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
-      background: #f9f9f9;
-    }
-    input, button {
-      padding: 10px;
-      margin: 10px 0;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    #barcode {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      margin: 0;
+      padding: 40px 20px;
+      color: white;
       text-align: center;
-      margin-top: 20px;
     }
-    #decoded {
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+    }
+    .btn {
+      background: #ff4757;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      margin: 10px 5px;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #ff2e43;
+    }
+    .btn#copyBtn {
+      background: #2ed573;
+    }
+    .btn#copyBtn:hover {
+      background: #1dd166;
+    }
+    #qrCanvas {
+      margin-top: 20px;
       background: white;
       padding: 10px;
-      border: 1px solid #ccc;
-      margin-top: 10px;
-      white-space: pre-wrap;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    #decodedText {
+      margin-top: 20px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      word-break: break-all;
+      direction: ltr;
+      text-align: left;
     }
     .hidden {
       display: none;
     }
   </style>
-  <!-- فونت فارسی (اختیاری) -->
-  <link href="https://v1.fontapi.ir/css/Vazir" rel="stylesheet">
 </head>
 <body>
-
-  <h2>دیکُد Base64 و تبدیل به بارکُد</h2>
-
-  <input type="text" id="base64Input" placeholder="متن Base64 را وارد کنید..." />
-  <button onclick="decodeAndGenerate()">تبدیل به بارکُد</button>
-
-  <div id="decoded" class="hidden" contenteditable="true"></div>
-  <button id="copyBtn" class="hidden" onclick="copyDecoded()">کپی خروجی</button>
-
-  <div id="barcode" class="hidden">
-    <svg id="barcodeSvg"></svg>
+  <div class="container">
+    <h1>Base64 به QR Code</h1>
+    <button id="pasteBtn" class="btn">📋 Paste از کلیپ‌بورد</button>
+    <div id="decodedContainer" class="hidden">
+      <h3>متن دیکد شده:</h3>
+      <div id="decodedText"></div>
+      <button id="copyBtn" class="btn">📋 کپی متن</button>
+      <div id="qrCanvas"></div>
+    </div>
   </div>
 
   <script>
-    function decodeAndGenerate() {
-      const input = document.getElementById("base64Input").value.trim();
-      const decodedDiv = document.getElementById("decoded");
-      const copyBtn = document.getElementById("copyBtn");
-      const barcodeDiv = document.getElementById("barcode");
-
-      if (!input) {
-        alert("لطفاً یک متن Base64 وارد کنید.");
-        return;
-      }
-
+    document.getElementById('pasteBtn').addEventListener('click', async () => {
       try {
+        const text = await navigator.clipboard.readText();
+        if (!text.trim()) {
+          alert('کلیپ‌بورد خالی است یا متن معتبری ندارد.');
+          return;
+        }
+
         // Decode Base64
-        const decoded = atob(input);
-        decodedDiv.textContent = decoded;
-        decodedDiv.classList.remove("hidden");
-        copyBtn.classList.remove("hidden");
+        let decoded;
+        try {
+          decoded = atob(text);
+        } catch (e) {
+          alert('متن وارد شده معتبر نیست (فرمت Base64 صحیح نیست).');
+          return;
+        }
 
-        // Generate Barcode
-        JsBarcode("#barcodeSvg", decoded, {
-          format: "CODE128",
-          displayValue: true,
-          fontSize: 16,
-          width: 2,
-          height: 80
+        document.getElementById('decodedText').textContent = decoded;
+        document.getElementById('decodedContainer').classList.remove('hidden');
+
+        // Generate QR Code
+        const qrContainer = document.getElementById('qrCanvas');
+        qrContainer.innerHTML = ''; // Clear previous QR
+        new QRCode(qrContainer, {
+          text: decoded,
+          width: 200,
+          height: 200,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
         });
-        barcodeDiv.classList.remove("hidden");
-      } catch (e) {
-        alert("خطا در دیکُد Base64! مطمئن شوید ورودی معتبر است.");
-        decodedDiv.classList.add("hidden");
-        copyBtn.classList.add("hidden");
-        barcodeDiv.classList.add("hidden");
+      } catch (err) {
+        console.error(err);
+        alert('خطا در خواندن از کلیپ‌بورد: دسترسی مجاز نیست یا مرورگر پشتیبانی نمی‌کند.');
       }
-    }
+    });
 
-    function copyDecoded() {
-      const text = document.getElementById("decoded").textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        alert("متن کپی شد!");
-      }).catch(err => {
-        console.error('کپی ناموفق بود:', err);
-        alert("خطا در کپی!");
-      });
-    }
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const text = document.getElementById('decodedText').textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('متن با موفقیت کپی شد!');
+      } catch (err) {
+        console.error(err);
+        alert('خطا در کپی متن.');
+      }
+    });
   </script>
-
 </body>
 </html>
