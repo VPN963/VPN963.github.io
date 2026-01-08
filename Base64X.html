@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>رمزنگاری امن + QR کد</title>
+  <!-- فونت Vazirmatn -->
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- QRious -->
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf9 100%);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      direction: rtl;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    h1 {
+      text-align: center;
+      color: #1a237e;
+      margin-bottom: 25px;
+      font-weight: 600;
+      font-size: 24px;
+    }
+    .group {
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #283593;
+      font-size: 15px;
+    }
+    textarea {
+      width: 100%;
+      height: 110px;
+      padding: 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      resize: vertical;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #3f51b5;
+      box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.15);
+    }
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin: 18px 0;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 11px 18px;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.25s ease;
+      min-width: 110px;
+      text-align: center;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .btn-encrypt { background: linear-gradient(to right, #3f51b5, #5c6bc0); }
+    .btn-decrypt { background: linear-gradient(to right, #009688, #26a69a); }
+    .btn-paste   { background: linear-gradient(to right, #ff9800, #ffb74d); }
+    .btn-copy    { background: linear-gradient(to right, #4caf50, #66bb6a); }
+    .btn-clear   { background: linear-gradient(to right, #78909c, #90a4ae); }
+    #qrcode {
+      margin-top: 25px;
+      text-align: center;
+      padding: 20px;
+      background: #f9f9ff;
+      border-radius: 14px;
+      border: 1px dashed #c5cae9;
+      display: none;
+    }
+    #qrcode h3 {
+      margin-top: 0;
+      color: #1a237e;
+      font-size: 18px;
+    }
+    #qrcode canvas {
+      max-width: 100%;
+      border-radius: 12px;
+      background: white;
+      padding: 8px;
+    }
+    .feedback {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #4caf50;
+      opacity: 0;
+      transition: opacity 0.3s;
+      text-align: left;
+    }
+    .status {
+      font-size: 13px;
+      color: #d32f2f;
+      margin-top: 6px;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔒 رمزنگاری سازگار + تبدیل به QR کد</h1>
+
+    <div class="group">
+      <label for="inputText">متن ورودی (لینک vmess یا subscribe):</label>
+      <textarea id="inputText" placeholder="لینک خود را اینجا وارد یا بچسبانید..."></textarea>
+      <div class="status" id="status"></div>
+      <div class="btn-group">
+        <button class="btn-paste" onclick="pasteToInput()">چسباندن</button>
+        <button class="btn-copy" onclick="copyFromInput()">کپی ورودی</button>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn-encrypt" onclick="encryptBtn()">رمزنگاری</button>
+      <button class="btn-decrypt" onclick="decryptBtn()">رمزگشایی</button>
+      <button class="btn-clear" onclick="clearAll()">🧹 پاکسازی</button>
+    </div>
+
+    <div class="group">
+      <label for="outputText">خروجی (فقط اعداد و حروف A-F):</label>
+      <textarea id="outputText" placeholder="نتیجه اینجا نمایش داده می‌شود..." readonly></textarea>
+      <div class="btn-group">
+        <button class="btn-copy" onclick="copyOutput()">کپی خروجی</button>
+      </div>
+      <div class="feedback" id="copyFeedback">✅ کپی شد!</div>
+    </div>
+
+    <div id="qrcode">
+      <h3>🪄 بارکد QR خروجی</h3>
+      <canvas id="qrCanvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const KEY = 0x55;
+
+    function encryptText(plain) {
+      let result = '';
+      for (let i = 0; i < plain.length; i++) {
+        const code = plain.charCodeAt(i) ^ KEY;
+        result += code.toString(16).padStart(2, '0').toUpperCase();
+      }
+      return result;
+    }
+
+    function decryptText(hex) {
+      hex = hex.trim();
+      if (!/^[0-9A-F]*$/i.test(hex) || hex.length % 2 !== 0) {
+        document.getElementById('status').textContent = '⚠️ متن ورودی برای رمزگشایی نامعتبر است!';
+        setTimeout(() => document.getElementById('status').textContent = '', 4000);
+        return '';
+      }
+      let result = '';
+      for (let i = 0; i < hex.length; i += 2) {
+        const hexPair = hex.substr(i, 2);
+        const code = parseInt(hexPair, 16) ^ KEY;
+        result += String.fromCharCode(code);
+      }
+      return result;
+    }
+
+    function encryptBtn() {
+      const input = document.getElementById('inputText').value;
+      if (!input.trim()) {
+        document.getElementById('status').textContent = '⚠️ لطفاً ابتدا متنی وارد کنید.';
+        setTimeout(() => document.getElementById('status').textContent = '', 3000);
+        return;
+      }
+      const encrypted = encryptText(input);
+      document.getElementById('outputText').value = encrypted;
+      generateQR(encrypted);
+      document.getElementById('status').textContent = '✓ رمزنگاری با موفقیت انجام شد.';
+      setTimeout(() => document.getElementById('status').textContent = '', 3000);
+    }
+
+    function decryptBtn() {
+      const input = document.getElementById('inputText').value;
+      if (!input.trim()) {
+        document.getElementById('status').textContent = '⚠️ لطفاً ابتدا متن رمزشده را وارد کنید.';
+        setTimeout(() => document.getElementById('status').textContent = '', 3000);
+        return;
+      }
+      const decrypted = decryptText(input);
+      if (decrypted === '') return;
+      document.getElementById('outputText').value = decrypted;
+      generateQR(decrypted);
+      document.getElementById('status').textContent = '✓ رمزگشایی با موفقیت انجام شد.';
+      setTimeout(() => document.getElementById('status').textContent = '', 3000);
+    }
+
+    function generateQR(text) {
+      const qrContainer = document.getElementById('qrcode');
+      const canvas = document.getElementById('qrCanvas');
+      if (!text.trim()) {
+        qrContainer.style.display = 'none';
+        return;
+      }
+      qrContainer.style.display = 'block';
+      new QRious({
+        element: canvas,
+        value: text,
+        size: 260,
+        background: '#ffffff',
+        foreground: '#1a237e'
+      });
+    }
+
+    function copyOutput() {
+      const output = document.getElementById('outputText');
+      output.select();
+      document.execCommand('copy');
+      showFeedback();
+    }
+
+    function copyFromInput() {
+      const input = document.getElementById('inputText');
+      input.select();
+      document.execCommand('copy');
+      showFeedback();
+    }
+
+    async function pasteToInput() {
+      const statusEl = document.getElementById('status');
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('inputText').value = text;
+        statusEl.textContent = '✓ متن با موفقیت چسبانده شد.';
+        setTimeout(() => statusEl.textContent = '', 3000);
+      } catch (err) {
+        statusEl.innerHTML = '⚠️ لطفاً متن را دستی با Ctrl+V یا راست‌کلیک → Paste بچسبانید.';
+        document.getElementById('inputText').focus();
+        setTimeout(() => statusEl.textContent = '', 5000);
+      }
+    }
+
+    function showFeedback() {
+      const feedback = document.getElementById('copyFeedback');
+      feedback.style.opacity = '1';
+      setTimeout(() => {
+        feedback.style.opacity = '0';
+      }, 2000);
+    }
+
+    // ✅ تابع پاکسازی کامل
+    function clearAll() {
+      document.getElementById('inputText').value = '';
+      document.getElementById('outputText').value = '';
+      document.getElementById('status').textContent = '';
+      document.getElementById('qrcode').style.display = 'none';
+    }
+
+    document.getElementById('inputText').addEventListener('input', () => {
+      document.getElementById('status').textContent = '';
+    });
+  </script>
+</body>
+</html>
